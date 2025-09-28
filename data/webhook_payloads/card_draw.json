@@ -1,0 +1,10 @@
+{
+  "event": "card_draw",
+  "timestamp": "2025-09-28T10:05:00Z",
+  "source": "card_game_client",
+  "data": {
+    "deck_id": "new",
+    "count": 1,
+    "game_session": "session_456"
+  }
+}

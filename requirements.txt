@@ -1,0 +1,28 @@
+# Lab 6: Reverse APIs and Event-Driven Automation with FastAPI
+# Core web framework and server
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+
+# HTTP client for external API calls
+requests==2.31.0
+httpx==0.25.0
+
+# Network device automation
+netmiko==4.2.0
+
+# Data validation and parsing
+pydantic==2.4.2
+
+# JSON handling and utilities
+python-json-logger==2.0.7
+
+# Optional: Enhanced development tools
+python-multipart==0.0.6
+jinja2==3.1.2
+
+# Optional: Testing and security
+pytest==7.4.3
+slowapi==0.1.8
+
+# Optional: Enhanced logging and monitoring
+structlog==23.1.0

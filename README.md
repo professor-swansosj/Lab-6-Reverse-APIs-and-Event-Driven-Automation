@@ -181,33 +181,71 @@ By adding these protections, your Webhook server becomes more than just a demo�
 
 ## :card_file_box: File Structure:
 
-'''
-file structure
-'''
+```
+Lab-6-Reverse-APIs-and-Event-Driven-Automation/
+├── README.md                           # Lab theory and concepts
+├── INSTRUCTIONS_TEMPLATE.md            # Step-by-step lab instructions
+├── requirements.txt                    # Python dependencies
+├── webhook_config.json                 # Server configuration
+├── data/
+│   ├── webhook_payloads/               # Sample JSON payloads for testing
+│   │   ├── joke_request.json
+│   │   ├── card_draw.json
+│   │   └── network_device_check.json
+│   ├── responses/                      # API responses and device outputs
+│   └── curl_tests/                     # cURL test scripts and outputs
+│       └── test_webhooks.sh
+├── src/
+│   ├── __init__.py
+│   ├── basic_webhook_server.py         # Simple webhook listener
+│   ├── joke_webhook_server.py          # Dad Jokes API integration
+│   ├── card_webhook_server.py          # Deck of Cards API integration
+│   └── network_webhook_server.py       # Network device integration
+└── logs/
+    ├── basic_webhook.log               # Basic server logs
+    ├── joke_webhook.log                # Joke API integration logs
+    ├── card_webhook.log                # Card API integration logs
+    ├── network_webhook.log             # Network device interaction logs
+    └── curl_tests.log                  # Test execution logs
+```
 
 ---
 
 ## Components
-text
 
-### 1. **Component 1**
-text
+### 1. **FastAPI Webhook Servers**
+Progressive implementations of HTTP servers that listen for incoming POST requests (webhooks) and trigger automated actions. Students build increasingly sophisticated servers that integrate with external APIs and network devices, demonstrating event-driven automation patterns.
 
-### 2. **Component 2**
-text
+### 2. **External API Integrations**
+Integration with public APIs (Dad Jokes, Deck of Cards) to demonstrate how webhook events can trigger calls to external services. This shows how webhooks create automation chains where one event triggers multiple downstream actions.
 
-### 3. **Component 3**
-text
+### 3. **Network Device Automation**
+Connection of webhook events to real network device interactions using Netmiko. Students learn how network monitoring systems, configuration changes, or device alerts can trigger immediate automated responses through webhook-driven workflows.
+
+### 4. **Event Simulation with cURL**
+Comprehensive testing suite using cURL to simulate various webhook events and payloads. This demonstrates how external systems (monitoring tools, CI/CD pipelines, other services) would trigger your webhook endpoints in production environments.
 
 ## :memo: Instructions
-1. text
-2. text
-3. text
+1. **Review Concepts**: Study the reverse API theory and Cisco EDNM examples to understand event-driven automation fundamentals
+2. **Build Progressive Servers**: Create FastAPI webhook listeners starting with basic event logging and progressing to external API integration
+3. **Test with cURL**: Use comprehensive cURL commands to simulate webhook events and verify your implementations
+4. **Integrate Network Devices**: Connect webhook events to real Cisco device interactions using Netmiko for complete automation workflows
+5. **Implement Security**: Add payload validation, error handling, and security best practices to create production-ready webhook servers
 
 ## :page_facing_up: Logging
-text
+All webhook servers must implement structured logging to track:
+- **Incoming Events**: Timestamp, event type, payload size, and source information
+- **API Integrations**: External API calls, response status, and processing time
+- **Network Operations**: Device connections, command execution, and output capture
+- **Error Conditions**: Failed requests, invalid payloads, and system errors
+- **Security Events**: Validation failures, rate limiting, and authentication attempts
+
+Log entries follow the format: `EVENT_TYPE key=value key2=value2 ts=<timestamp>`
 
 ## :green_checkmark: Grading Breakdown
-- x pts: 
-- x pts:
-- x pts:
+- **25 pts**: FastAPI webhook server implementations (basic, joke, card, network)
+- **20 pts**: External API integrations working correctly with proper error handling
+- **15 pts**: Network device automation via webhooks using Netmiko
+- **10 pts**: Comprehensive cURL testing suite with documented examples
+- **5 pts**: Security implementation with validation and configuration management
+- **Total: 75 pts**
