@@ -1,0 +1,212 @@
+title: "Lab 6 — Reverse APIs & Event-Driven Automation (Webhooks)"
+course: "Software Defined Networking"
+module: "Network Automation Fundamentals"
+lab_number: 6
+time_estimate: "120–150 minutes"
+
+objectives:
+  - "Explain what a Webhook is and how it differs from traditional request/response APIs."
+  - "Describe event-driven automation in networking (e.g., Cisco EDNM) and how webhooks trigger workflows."
+  - "Stand up a FastAPI webhook listener that accepts JSON payloads via POST."
+  - "Use cURL to simulate webhook events and validate request handling."
+  - "Integrate external APIs (Dad Jokes, Deck of Cards) as event-driven actions."
+  - "Trigger network device interactions (Netmiko) from webhook events."
+  - "Apply basic webhook security: validation, limits, and token checks."
+  - "Produce logs and artifacts suitable for autograding."
+
+python_version: "3.11"
+accounts: ["GitHub"]
+devices:
+  - "Local FastAPI webhook server"
+  - "Cisco DevNet Always-On Sandbox (Catalyst 8k/9k)"
+
+overview: >
+  Webhooks flip the usual API pattern: instead of polling, the server calls you when events happen.
+  You’ll build a FastAPI listener, drive it with cURL, trigger external APIs, and tie events to
+  network device actions (Netmiko). This is the backbone of event-driven network automation.
+
+before_you_begin: >
+  Open the dev container, confirm `python --version` prints 3.11+, and ensure outbound HTTPS works.
+  Create `logs/`, `data/webhook_payloads/`, `data/responses/`, and `data/curl_tests/` if missing.
+
+resources:
+  - { title: "FastAPI", url: "https://fastapi.tiangolo.com/" }
+  - { title: "Uvicorn", url: "https://www.uvicorn.org/" }
+  - { title: "Requests (Python)", url: "https://requests.readthedocs.io/en/latest/" }
+  - { title: "Netmiko", url: "https://ktbyers.github.io/netmiko/" }
+  - { title: "RFC 8040 — RESTCONF", url: "https://www.rfc-editor.org/rfc/rfc8040" }
+  - { title: "RFC 6241 — NETCONF", url: "https://www.rfc-editor.org/rfc/rfc6241" }
+  - { title: "Cisco DevNet Sandboxes", url: "https://developer.cisco.com/site/sandbox/" }
+
+faq:
+  - q: "Why did I get HTML instead of JSON from an API?"
+    a: "Set `Accept: application/json` (or `application/yang-data+json` for RESTCONF)."
+  - q: "My webhook server won’t start."
+    a: "Install deps in the dev container: `pip install fastapi uvicorn` or use `requirements.txt`."
+  - q: "Deck of Cards draw fails."
+    a: "Create a deck first, save the `deck_id`, and pass it to the draw endpoint."
+
+deliverables:
+  readme_summary: "Standardized README explaining goals, overview, resources, grading, and tips."
+  instructions_summary: "Step-by-step INSTRUCTIONS with required log markers and artifacts."
+  files:
+    src:
+      - "src/basic_webhook_server.py"
+      - "src/joke_webhook_server.py"
+      - "src/card_webhook_server.py"
+      - "src/network_webhook_server.py"
+    data:
+      - "data/webhook_payloads/joke_request.json"
+      - "data/webhook_payloads/card_draw.json"
+      - "data/webhook_payloads/network_device_check.json"
+      - "data/responses/"
+      - "data/curl_tests/test_webhooks.sh"
+    logs:
+      - "logs/basic_webhook.log"
+      - "logs/joke_webhook.log"
+      - "logs/card_webhook.log"
+      - "logs/network_webhook.log"
+      - "logs/curl_tests.log"
+      - "logs/DEVCONTAINER_STATUS.txt"
+
+grading:
+  total_points: 75
+  rows:
+    - { step: "1", requirement: "Dev container ready; dependencies installed", points: 3 }
+    - { step: "2", requirement: "Reverse API concepts + EDNM documented", points: 3 }
+    - { step: "3", requirement: "Basic FastAPI server with /events endpoint", points: 8 }
+    - { step: "3", requirement: "Server logs requests and handles errors", points: 4 }
+    - { step: "4", requirement: "cURL sends JSON successfully", points: 5 }
+    - { step: "4", requirement: "Error cases tested and handled", points: 3 }
+    - { step: "5", requirement: "Dad Jokes integration via webhook", points: 7 }
+    - { step: "5", requirement: "Proper response handling and errors", points: 3 }
+    - { step: "6", requirement: "Deck of Cards integration; multiple events", points: 6 }
+    - { step: "6", requirement: "Deck state management", points: 4 }
+    - { step: "7", requirement: "Netmiko device interaction via webhook", points: 8 }
+    - { step: "7", requirement: "Device output captured and returned", points: 4 }
+    - { step: "8", requirement: "Security and validation implemented", points: 5 }
+    - { step: "8", requirement: "Config externalized; robust errors", points: 3 }
+    - { step: "9", requirement: "Comprehensive tests + docs", points: 4 }
+    - { step: "10", requirement: "End-to-end demo works", points: 5 }
+    - { step: "11", requirement: "Submission quality; required logs present", points: 3 }
+
+tips:
+  - title: "Port in use"
+    symptom: "Uvicorn fails on 8000"
+    fix: "Kill the process or run `--port 8001`."
+  - title: "cURL refused"
+    symptom: "Connection refused to localhost"
+    fix: "Bind to 0.0.0.0 and ensure the server is running."
+  - title: "Missing logs"
+    symptom: "Autograder can’t find markers"
+    fix: "Use the provided `log(...)` helper and correct file paths."
+
+autograder:
+  log_path: "logs/*.log"
+  required_markers:
+    - "LAB6_START"
+    - "SERVER_STARTED"
+    - "CURL_TEST"
+    - "WEBHOOK_RECEIVED"
+    - "JOKE_API_CALLED"
+    - "CARD_API_CALLED"
+    - "NETWORK_DEVICE_CALLED"
+    - "SECURITY_VALIDATION"
+    - "TESTING_COMPLETE"
+    - "LAB6_COMPLETE"
+
+submission_checklist:
+  - "All four servers present under `src/` and start without tracebacks."
+  - "cURL scripts under `data/curl_tests/` exercise each event type."
+  - "Artifacts saved under `data/responses/`."
+  - "Logs contain all required markers for each phase."
+  - "README/INSTRUCTIONS rendered from template; PR passes Verify Docs."
+
+steps:
+  - title: "Clone the Repository & Setup"
+    goal: "Get workspace ready; confirm environment."
+    actions: |
+      Clone your Classroom repo, open in VS Code, and reopen in the dev container.
+      Verify Python and dependencies; create the data/logs folders if needed.
+    done_when: |
+      - Dev container shows READY
+      - Dependencies installed (fastapi, uvicorn, requests)
+      - `logs/DEVCONTAINER_STATUS.txt` updated
+    log_marker: "LAB6_START"
+
+  - title: "Understand Reverse APIs (Webhooks)"
+    goal: "Grasp polling vs push; relate to EDNM."
+    actions: |
+      Read the README section on webhooks, skim EDNM examples, and note webhook anatomy:
+      URL, headers, JSON payload.
+    done_when: "You can explain polling vs push and list webhook parts."
+    log_marker: "CONCEPT_REVIEW"
+
+  - title: "Build Basic FastAPI Webhook Server"
+    goal: "Receive JSON via POST and log it."
+    actions: |
+      Implement `src/basic_webhook_server.py` with POST `/events`, parse JSON, log to file,
+      return `{ "status": "ok" }`, and handle bad input cleanly.
+      Start with `uvicorn basic_webhook_server:app --host 0.0.0.0 --port 8000`.
+    done_when: "Server runs and accepts POSTs without crashing."
+    log_marker: "SERVER_STARTED"
+
+  - title: "Test Webhook with cURL"
+    goal: "Simulate events and validate handling."
+    actions: |
+      Create sample payloads under `data/webhook_payloads/` and send them with cURL to `/events`.
+      Include one malformed JSON test and record results to `logs/curl_tests.log`.
+    done_when: "Valid and invalid payloads both handled; logs updated."
+    log_marker: "CURL_TEST"
+
+  - title: "Joke API via Webhook"
+    goal: "Trigger external API based on event."
+    actions: |
+      Implement `src/joke_webhook_server.py` that responds to `{"event":"joke_request"}` by
+      calling Dad Jokes (`Accept: application/json`), returning the joke and logging the call.
+    done_when: "Jokes returned and logged."
+    log_marker: "JOKE_API_CALLED"
+
+  - title: "Deck of Cards via Webhook"
+    goal: "Support multiple event types and state."
+    actions: |
+      Implement `src/card_webhook_server.py` that handles `new_deck`, `draw`, `shuffle`,
+      persists `deck_id`, and logs actions and outcomes.
+    done_when: "Deck created/drawn/shuffled via webhook events."
+    log_marker: "CARD_API_CALLED"
+
+  - title: "Network Device via Webhook"
+    goal: "Trigger Netmiko interactions from events."
+    actions: |
+      Implement `src/network_webhook_server.py` that accepts device/action params,
+      connects to DevNet sandbox with Netmiko, runs show commands, returns structured data,
+      and logs connection/command results and errors.
+    done_when: "Device output returned; errors handled gracefully."
+    log_marker: "NETWORK_DEVICE_CALLED"
+
+  - title: "Security & Validation"
+    goal: "Harden the listener."
+    actions: |
+      Add payload validation, size limits, optional bearer token check, and input sanitization.
+      Externalize non-secret config to `webhook_config.json`.
+    done_when: "Bad inputs rejected; config read from file."
+    log_marker: "SECURITY_VALIDATION"
+
+  - title: "Comprehensive Testing & Docs"
+    goal: "Exercise all endpoints and document."
+    actions: |
+      Write cURL scripts for every event type, capture responses to `data/responses/`,
+      and document formats and expected outcomes.
+    done_when: "All endpoints tested; artifacts present."
+    log_marker: "TESTING_COMPLETE"
+
+  - title: "Demo & Submit"
+    goal: "Run the full workflow and submit."
+    actions: |
+      Run your most capable server, execute a scripted demo of all features,
+      ensure logs contain the required markers, commit/push, and open a PR.
+    done_when: "PR is open and Verify Docs is green."
+    log_marker: "LAB6_COMPLETE"
+
+license: "© 2025 Your Name — Classroom use."
+
