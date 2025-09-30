@@ -88,3 +88,5 @@ Webhooks flip the usual API pattern: instead of polling, the server calls you wh
 © 2025 Your Name — Classroom use.
 
 # HAPPY CODING!
+
+**Sincerely, Professor Swanson**
