@@ -4,89 +4,111 @@
 **Module:** Network Automation Fundamentals • **Lab #:** 6  
 **Estimated Time:** 120–150 minutes
 
-## Objectives
-- Explain what a Webhook is and how it differs from traditional request/response APIs.
-- Describe event-driven automation in networking (e.g., Cisco EDNM) and how webhooks trigger workflows.
-- Stand up a FastAPI webhook listener that accepts JSON payloads via POST.
-- Use cURL to simulate webhook events and validate request handling.
-- Integrate external APIs (Dad Jokes, Deck of Cards) as event-driven actions.
-- Trigger network device interactions (Netmiko) from webhook events.
-- Apply basic webhook security: validation, limits, and token checks.
-- Produce logs and artifacts suitable for autograding.
+## Repository structure
 
-## Prerequisites
-- Python 3.11 (via the provided dev container)
-- Accounts: GitHub
-- Devices/Sandboxes: Local FastAPI webhook server, Cisco DevNet Always-On Sandbox (Catalyst 8k/9k)
-
-## Overview
-Webhooks flip the usual API pattern: instead of polling, the server calls you when events happen. You’ll build a FastAPI listener, drive it with cURL, trigger external APIs, and tie events to network device actions (Netmiko). This is the backbone of event-driven network automation.
-
-
-## Resources
-- [FastAPI](https://fastapi.tiangolo.com/)- [Uvicorn](https://www.uvicorn.org/)- [Requests (Python)](https://requests.readthedocs.io/en/latest/)- [Netmiko](https://ktbyers.github.io/netmiko/)- [RFC 8040 — RESTCONF](https://www.rfc-editor.org/rfc/rfc8040)- [RFC 6241 — NETCONF](https://www.rfc-editor.org/rfc/rfc6241)- [Cisco DevNet Sandboxes](https://developer.cisco.com/site/sandbox/)
-
-## FAQ
-**Q:** Why did I get HTML instead of JSON from an API?  
-**A:** Set `Accept: application/json` (or `application/yang-data+json` for RESTCONF).
-
-**Q:** My webhook server won’t start.  
-**A:** Install deps in the dev container: `pip install fastapi uvicorn` or use `requirements.txt`.
-
-**Q:** Deck of Cards draw fails.  
-**A:** Create a deck first, save the `deck_id`, and pass it to the draw endpoint.
-
-
-
-## Deliverables
-- Standardized README explaining goals, overview, resources, grading, and tips.
-- Step-by-step INSTRUCTIONS with required log markers and artifacts.
-- Grading: **75 points**
-
-## Grading Breakdown
-| Step | Requirement | Points |
-|---|---|---|
-| 1 | Dev container ready; dependencies installed | 3 |
-| 2 | Reverse API concepts + EDNM documented | 3 |
-| 3 | Basic FastAPI server with /events endpoint | 8 |
-| 3 | Server logs requests and handles errors | 4 |
-| 4 | cURL sends JSON successfully | 5 |
-| 4 | Error cases tested and handled | 3 |
-| 5 | Dad Jokes integration via webhook | 7 |
-| 5 | Proper response handling and errors | 3 |
-| 6 | Deck of Cards integration; multiple events | 6 |
-| 6 | Deck state management | 4 |
-| 7 | Netmiko device interaction via webhook | 8 |
-| 7 | Device output captured and returned | 4 |
-| 8 | Security and validation implemented | 5 |
-| 8 | Config externalized; robust errors | 3 |
-| 9 | Comprehensive tests + docs | 4 |
-| 10 | End-to-end demo works | 5 |
-| 11 | Submission quality; required logs present | 3 |
-| **Total** |  | **75** |
-
-## 🔧 Troubleshooting & Pro Tips
-**Port in use**  
-*Symptom:* Uvicorn fails on 8000  
-*Fix:* Kill the process or run `--port 8001`.
-
-**cURL refused**  
-*Symptom:* Connection refused to localhost  
-*Fix:* Bind to 0.0.0.0 and ensure the server is running.
-
-**Missing logs**  
-*Symptom:* Autograder can’t find markers  
-*Fix:* Use the provided `log(...)` helper and correct file paths.
+```text
+Lab-6-Reverse-APIs-and-Event-Driven-Automation
+├── .devcontainer
+│   └── devcontainer.json
+├── .gitignore
+├── .markdownlint.json
+├── .markdownlintignore
+├── .pettierrc.yml
+├── INSTRUCTIONS.backup.md
+├── INSTRUCTIONS.md
+├── LICENSE
+├── README.backup.md
+├── README.md
+├── data
+│   ├── curl_tests
+│   │   └── test_webhooks.sh
+│   ├── inventory.example.yml
+│   └── webhook_payloads
+│       ├── card_draw.json
+│       ├── joke_request.json
+│       └── network_device_check.json
+├── lab.yml
+├── prettierrc.yml
+├── requirements.txt
+├── src
+│   ├── __init__.py
+│   └── main.py
+└── webhook_config.json
+```
 
 
+## Lab Topics
 
-## Autograder Notes
-- Log file: `logs/*.log`
-- Required markers: `LAB6_START`, `SERVER_STARTED`, `CURL_TEST`, `WEBHOOK_RECEIVED`, `JOKE_API_CALLED`, `CARD_API_CALLED`, `NETWORK_DEVICE_CALLED`, `SECURITY_VALIDATION`, `TESTING_COMPLETE`, `LAB6_COMPLETE`
+### What is a Webhook?
+A webhook is a user-defined HTTP callback that is triggered by specific events. When an event occurs in a service,  the webhook sends a POST request to a specified URL with a payload containing information about the event. This allows  for real-time communication between services and enables event-driven architectures.
+Common use cases for webhooks include in networking, where a network device or management system can notify an external application of configuration changes, alerts, or status updates. This is in contrast to traditional request/response APIs,  where the client must poll the server for updates.
+Example services in networking that utilize webhooks include Cisco's Event-Driven Network Management (EDNM) platform, which  can trigger workflows based on network events. Webhooks typically consist of: - **URL**: The endpoint where the webhook payload is sent. - **Headers**: Metadata about the request, such as content type and authentication tokens. - **Payload**: The data sent in the body of the POST request, usually in JSON format.
+
+
+### API vs Webhook
+Traditional APIs operate on a request/response model, where a client sends a request to a server and waits for a response.  This often involves polling the server at regular intervals to check for updates, which can lead to inefficiencies and delays.
+In contrast, webhooks follow a push model, where the server proactively sends data to the client when an event occurs.  This allows for real-time updates and reduces the need for constant polling, making webhooks more efficient for event-driven scenarios.
+Key differences include: - **Initiation**: APIs require the client to initiate requests; webhooks are initiated by the server. - **Timing**: APIs may involve delays due to polling intervals; webhooks provide immediate notifications. - **Resource Usage**: APIs can consume more resources due to frequent polling; webhooks are more efficient as they only send data when necessary.
+
+
+### Webhooks in Networking
+Webhooks are particularly useful in networking for real-time event notifications. For example, Cisco's Event-Driven Network Management (EDNM) platform utilizes webhooks to trigger workflows based on network events. This allows network administrators to respond quickly to changes in the network environment.
+In a typical webhook setup for networking, the following components are involved: - **Event Source**: The network device or management system that generates events (e.g., configuration changes, alerts). - **Webhook Listener**: The endpoint that receives webhook notifications (e.g., a FastAPI application). - **Payload**: The data sent in the webhook notification, which may include details about the event and relevant context.
+By leveraging webhooks, networking tools can achieve greater automation and responsiveness, enabling more efficient management of network resources.
+
+
+### Cisco EDNM & Webhooks
+Cisco's Event-Driven Network Management (EDNM) platform is a powerful tool that utilizes webhooks to enable event-driven automation in networking. EDNM allows network administrators to define workflows that are triggered by specific events, such as configuration changes, device status updates, or security alerts.
+In an EDNM setup, webhooks play a crucial role in facilitating communication between the network management system and external applications. When an event occurs, EDNM sends a webhook notification to a predefined URL, allowing the receiving application to process the event and take appropriate actions.
+Key features of Cisco EDNM with webhooks include: - **Event Triggers**: Define specific events that will trigger webhook notifications. - **Custom Payloads**: Configure the data sent in the webhook payload to include relevant information about the event. - **Integration**: Easily integrate with other systems and applications using webhooks, enabling seamless automation across different platforms.
+By leveraging webhooks in Cisco EDNM, network administrators can create dynamic and responsive workflows that enhance network management and improve operational efficiency.
+An example configuration snippet for setting up a webhook in Cisco EDNM might look like the example below:
+
+
+```bash
+router(config)# event manager applet Webhook_Example
+router(config-applet)# event syslog pattern "LINK-3-UPDOWN"
+router(config-applet)# action 1.0 cli command "enable"
+router(config-applet)# action 1.1 cli command "configure terminal"
+router(config-applet)# action 1.2 cli command "interface GigabitEthernet0/1"
+router(config-applet)# action 1.3 cli command "description Link is up"
+router(config-applet)# action 1.4 cli command "end"
+router(config-applet)# action 1.5 http post url "http://your-webhook-url" body "Interface GigabitEthernet0/1 is up"
+router(config-applet)# action 1.6 exit
+router(config-applet)# exit
+router(config)# exit
+
+```
+
+### Creating Webhook Listeners with FastAPI
+FastAPI is a modern, fast (high-performance) web framework for building APIs with Python 3.7+ based on standard Python type hints. It is particularly well-suited for creating webhook listeners due to its simplicity and efficiency.
+To create a webhook listener with FastAPI, you typically define an endpoint that accepts POST requests. The endpoint processes the incoming JSON payload and performs actions based on the event data.
+Here’s a basic example of a FastAPI webhook listener:
+
+
+```python
+from fastapi import FastAPI
+
+app = FastAPI()
+
+@app.post("/webhook")
+async def handle_webhook(payload: dict):
+    # Process the incoming webhook payload
+    print("Received webhook payload:", payload)
+    return {"status": "success"}
+
+```
+
+### Security Considerations for Webhooks
+When implementing webhooks, it is crucial to consider security aspects to protect against unauthorized access and ensure the integrity of the data being transmitted. Here are some best practices for securing webhooks:
+1. **Validation**: Always validate incoming webhook requests to ensure they originate from a trusted source. This can be done by checking headers, IP addresses, or using shared secrets.
+2. **Authentication**: Implement authentication mechanisms such as HMAC signatures or bearer tokens to verify the authenticity of the webhook requests.
+3. **Rate Limiting**: Apply rate limiting to prevent abuse and mitigate denial-of-service (DoS) attacks.
+4. **Payload Size Limits**: Set limits on the size of incoming payloads to avoid resource exhaustion.
+5. **HTTPS**: Use HTTPS to encrypt data in transit and protect against eavesdropping and man-in-the-middle attacks.
+
+
+
 
 ## License
 © 2025 Your Name — Classroom use.
-
-# HAPPY CODING!
-
-**Sincerely, Professor Swanson**
