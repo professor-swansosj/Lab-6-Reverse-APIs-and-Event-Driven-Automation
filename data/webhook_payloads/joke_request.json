@@ -1,9 +1,0 @@
-{
-  "event": "joke_request",
-  "timestamp": "2025-09-28T10:00:00Z",
-  "source": "test_client",
-  "data": {
-    "user_id": "student123",
-    "request_id": "req_001"
-  }
-}
