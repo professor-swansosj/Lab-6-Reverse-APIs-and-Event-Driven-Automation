@@ -178,210 +178,258 @@ readme_topic:
 #  |___|_| \_|____/ |_| |_| \_\\___/ \____| |_| |___\___/|_| \_|____/
 #
 #========================================================================
+# LAB 6 — REVERSE APIs & EVENT-DRIVEN AUTOMATION (FastAPI Webhooks + EEM)
+# Software Defined Networking • Florida State College at Jacksonville
+# Worth 75 points
 
+# OBJECTIVES
 objectives:
-  - "Explain what a Webhook is and how it differs from traditional request/response APIs."
-  - "Describe event-driven automation in networking (e.g., Cisco EDNM) and how webhooks trigger workflows."
-  - "Stand up a FastAPI webhook listener that accepts JSON payloads via POST."
-  - "Use cURL to simulate webhook events and validate request handling."
-  - "Integrate external APIs (Dad Jokes, Deck of Cards) as event-driven actions."
-  - "Trigger network device interactions (Netmiko) from webhook events."
-  - "Apply basic webhook security: validation, limits, and token checks."
-  - "Produce logs and artifacts suitable for autograding."
+  - "Explain webhooks (reverse APIs) and event-driven automation."
+  - "Build a FastAPI webhook service with ≥5 paths (joke, card draw, Netmiko, RESTCONF, NETCONF)."
+  - "Secure endpoints with a shared token; implement validation and logging."
+  - "Persist artifacts (raw responses and summaries) for grading."
+  - "Configure a Cisco EEM applet to call the webhook on interface-down and back up device config."
 
+# PREREQUISITES
 python_version: "3.11"
-accounts: ["GitHub"]
+accounts: ["GitHub", "Cisco DevNet"]
 devices:
-  - "Local FastAPI webhook server"
-  - "Cisco DevNet Always-On Sandbox (Catalyst 8k/9k)"
+  - "Local FastAPI server"
+  - "Cisco DevNet Always-On Catalyst 8k/9k (SSH/RESTCONF/NETCONF)"
 
+prereq:
+  - "Intermediate Python (functions, modules, exceptions, logging)."
+  - "FastAPI + Uvicorn basics."
+  - "requests, netmiko, ncclient, and xmltodict usage."
+  - "cURL or Postman to send webhook events."
+  - "Access to Cisco DevNet Always-On sandbox and credentials."
+
+# OVERVIEW
 overview: >
-  Webhooks flip the usual API pattern: instead of polling, the server calls you when events happen.
-  You’ll build a FastAPI listener, drive it with cURL, trigger external APIs, and tie events to
-  network device actions (Netmiko). This is the backbone of event-driven network automation.
+  Build a FastAPI webhook service with five POST endpoints: Dad Jokes, Deck of Cards, Netmiko command,
+  RESTCONF request, and NETCONF RPC. Protect endpoints with a shared token, save artifacts under data/,
+  and log deterministic markers for autograding. Then configure a Cisco EEM applet on the sandbox device
+  that triggers a webhook POST when an interface goes down. Back up the device configuration and include
+  it in the repository.
 
+# SETUP
 before_you_begin: >
-  Open the dev container, confirm `python --version` prints 3.11+, and ensure outbound HTTPS works.
-  Create `logs/`, `data/webhook_payloads/`, `data/responses/`, and `data/curl_tests/` if missing.
+  Open the dev container. Verify imports:
+  `python -c "import fastapi, uvicorn, requests, netmiko, ncclient, xmltodict; print('OK')"`
+  Ensure you can write to `data/` and `logs/`. Confirm sandbox reachability (TCP 22/443/830).
 
+# RESOURCES
 resources:
   - { title: "FastAPI", url: "https://fastapi.tiangolo.com/" }
   - { title: "Uvicorn", url: "https://www.uvicorn.org/" }
   - { title: "Requests (Python)", url: "https://requests.readthedocs.io/en/latest/" }
   - { title: "Netmiko", url: "https://ktbyers.github.io/netmiko/" }
-  - { title: "RFC 8040 — RESTCONF", url: "https://www.rfc-editor.org/rfc/rfc8040" }
-  - { title: "RFC 6241 — NETCONF", url: "https://www.rfc-editor.org/rfc/rfc6241" }
+  - { title: "ncclient", url: "https://ncclient.readthedocs.io/" }
+  - { title: "xmltodict", url: "https://github.com/martinblech/xmltodict" }
   - { title: "Cisco DevNet Sandboxes", url: "https://developer.cisco.com/site/sandbox/" }
+  - { title: "Cisco EEM (Embedded Event Manager) Overview", url: "https://www.cisco.com/c/en/us/td/docs/ios-xml/ios/eem/command/eem-cr-book/eem-cr-a1.html" }
 
-faq:
-  - q: "Why did I get HTML instead of JSON from an API?"
-    a: "Set `Accept: application/json` (or `application/yang-data+json` for RESTCONF)."
-  - q: "My webhook server won’t start."
-    a: "Install deps in the dev container: `pip install fastapi uvicorn` or use `requirements.txt`."
-  - q: "Deck of Cards draw fails."
-    a: "Create a deck first, save the `deck_id`, and pass it to the draw endpoint."
-
+# DELIVERABLES
 deliverables:
-  readme_summary: "Standardized README explaining goals, overview, resources, grading, and tips."
-  instructions_summary: "Step-by-step INSTRUCTIONS with required log markers and artifacts."
-  files:
-    src:
-      - "src/basic_webhook_server.py"
-      - "src/joke_webhook_server.py"
-      - "src/card_webhook_server.py"
-      - "src/network_webhook_server.py"
-    data:
-      - "data/webhook_payloads/joke_request.json"
-      - "data/webhook_payloads/card_draw.json"
-      - "data/webhook_payloads/network_device_check.json"
-      - "data/responses/"
-      - "data/curl_tests/test_webhooks.sh"
-    logs:
-      - "logs/basic_webhook.log"
-      - "logs/joke_webhook.log"
-      - "logs/card_webhook.log"
-      - "logs/network_webhook.log"
-      - "logs/curl_tests.log"
-      - "logs/DEVCONTAINER_STATUS.txt"
+  - "`src/app.py` (FastAPI app) with ≥5 paths: `/joke`, `/card/draw`, `/device/command`, `/restconf/system`, `/netconf/system` (POST + token)."
+  - "`data/` artifacts: `joke.json/txt`, `card.json/txt`, `device_cmd.txt`, `restconf_*.json`, `netconf_*.xml/txt`, and `summary.txt`."
+  - "`logs/lab6.log` with required markers from startup, security checks, and each action."
+  - "`data/device_running_config.txt` (sandbox running-config backup)."
+  - "`data/eem_config.txt` containing the EEM applet configuration you applied."
+  - "Pull request open to `main` with all artifacts committed."
 
+# STEPS
+steps:
+  - title: "Clone the Repository"
+    goal: "Get your starter locally."
+    actions: |
+      Clone your Classroom repo and `cd` into it. Create `src/`, `data/`, and `logs/` if missing.
+      Initialize the lab log: `echo 'LAB6_START' >> logs/lab6.log`
+    done_when: |
+      - Folders exist and initial log marker written.
+    log_marker: "LAB6_START"
+
+  - title: "Environment & Packages"
+    goal: "Standardize the toolchain."
+    actions: |
+      Reopen in dev container. Verify FastAPI/Uvicorn/Requests/Netmiko/ncclient/xmltodict imports.
+      Append `[STEP 2] Dev Container Started` and `PKG_OK:*` markers to `logs/lab6.log`.
+    done_when: |
+      - Python 3.11+ confirmed, imports OK.
+      - Log contains `[STEP 2] Dev Container Started` and `PKG_OK: fastapi`, `PKG_OK: requests`, `PKG_OK: netmiko`, `PKG_OK: ncclient`.
+    log_marker: "[STEP 2] Dev Container Started, PKG_OK: fastapi, PKG_OK: requests, PKG_OK: netmiko, PKG_OK: ncclient"
+
+  - title: "FastAPI App & Security"
+    goal: "Expose webhook endpoints with auth and logging."
+    actions: |
+      Implement `src/app.py` with:
+        - FastAPI app and a startup log: `SERVER_STARTED`.
+        - Shared token check (e.g., `X-Webhook-Token`) for all POST endpoints.
+        - Centralized `log(marker, **fields)` helper writing to `logs/lab6.log`.
+        - Pydantic models for request payloads (where applicable).
+      Start server: `uvicorn src.app:app --host 0.0.0.0 --port 8000`
+    done_when: |
+      - Server runs and logs `SERVER_STARTED`.
+      - Invalid/missing token returns 401 and logs `SECURITY_VALIDATION=FAIL`.
+    log_marker: "SERVER_STARTED, SECURITY_VALIDATION"
+
+  - title: "Endpoint 1 — /joke (Dad Jokes API)"
+    goal: "Return a dad joke via webhook-triggered GET."
+    actions: |
+      Validate token; GET `https://icanhazdadjoke.com/` with `Accept: application/json`.
+      Save JSON to `data/joke.json`, text to `data/joke.txt`, return JSON; log markers.
+    done_when: |
+      - `data/joke.json` and `data/joke.txt` exist and handler returns JSON.
+    log_marker: "WEBHOOK_RECEIVED=/joke, JOKE_API_CALLED, RAW_SAVED=joke.json"
+
+  - title: "Endpoint 2 — /card/draw (Deck of Cards)"
+    goal: "Create deck and draw a card."
+    actions: |
+      Create deck then draw 1 card; save `data/card.json` and `data/card.txt`, return summary; log markers.
+    done_when: |
+      - `data/card.json` and `data/card.txt` exist; response includes card fields.
+    log_marker: "WEBHOOK_RECEIVED=/card/draw, CARD_API_CALLED, RAW_SAVED=card.json"
+
+  - title: "Endpoint 3 — /device/command (Netmiko)"
+    goal: "Run a show command on sandbox device."
+    actions: |
+      Connect with Netmiko (`cisco_ios`), run a read-only command (e.g., `show version`).
+      Save output to `data/device_cmd.txt`; return short JSON; log markers.
+    done_when: |
+      - Output saved to `data/device_cmd.txt`.
+    log_marker: "WEBHOOK_RECEIVED=/device/command, NETWORK_DEVICE_CALLED, CONNECT_OK: NETMIKO"
+
+  - title: "Endpoint 4 — /restconf/system (RESTCONF)"
+    goal: "Query system/platform via RESTCONF."
+    actions: |
+      Use `Accept: application/yang-data+json`. Save raw `data/restconf_system.json`, return JSON summary; log markers.
+    done_when: |
+      - Raw JSON saved; summary returned.
+    log_marker: "WEBHOOK_RECEIVED=/restconf/system, RESTCONF_CALLED, RAW_SAVED=restconf_system.json"
+
+  - title: "Endpoint 5 — /netconf/system (NETCONF)"
+    goal: "Query system/platform via NETCONF RPC."
+    actions: |
+      Connect with `ncclient.manager.connect(..., port=830)`. Save raw XML `data/netconf_system.xml`,
+      parse with `xmltodict`, return JSON summary; log markers.
+    done_when: |
+      - Raw XML saved; summary JSON returned.
+    log_marker: "WEBHOOK_RECEIVED=/netconf/system, NETCONF_CALLED, RAW_SAVED=netconf_system.xml"
+
+  - title: "Cisco EEM Applet — Webhook on Interface-Down"
+    goal: "Configure an EEM applet to POST to your webhook when an interface goes down."
+    actions: |
+      On the sandbox device, create an EEM applet that triggers on link-down syslog (e.g., LINK-3-UPDOWN).
+      The action should POST to your FastAPI webhook (token included). Save the exact applet configuration
+      you applied to `data/eem_config.txt`. Also back up the running configuration to `data/device_running_config.txt`
+      (e.g., via Netmiko `show running-config` or RESTCONF). Log markers when saved.
+      Note: If Guestshell/cURL or embedded HTTP client is unavailable, include an alternate IOS-XE-supported
+      method or a documented fallback in `data/eem_config.txt`.
+    done_when: |
+      - `data/eem_config.txt` contains the applet configuration you applied.
+      - `data/device_running_config.txt` exists with the device running-config.
+      - Log includes `EEM_CONFIG_SAVED` and `CONFIG_BACKUP_SAVED`.
+    log_marker: "EEM_CONFIG_SAVED, CONFIG_BACKUP_SAVED"
+
+  - title: "Summary File & Test Run"
+    goal: "Produce a human-readable roll-up and validate endpoints with cURL."
+    actions: |
+      Write `data/summary.txt` with one section per endpoint (joke, card, device, restconf, netconf),
+      plus a short note that the EEM applet is configured (reference `data/eem_config.txt`).
+      Exercise each endpoint using cURL (include token) and capture HTTP 200s. Log `TESTING_COMPLETE`.
+      (Optional) If policy permits, flap a lab interface to test the applet and note the time observed.
+    done_when: |
+      - `data/summary.txt` exists and includes all sections.
+      - Log shows `TESTING_COMPLETE`.
+    log_marker: "TESTING_COMPLETE"
+
+  - title: "Finalize & Submit"
+    goal: "Close out logs and open PR."
+    actions: |
+      Stop the server, append `LAB6_END` to `logs/lab6.log`.
+      Commit and push all changes. Open a pull request targeting `main`.
+    done_when: |
+      - PR is open; artifacts present; markers complete.
+    log_marker: "LAB6_END"
+
+# FAQ + TROUBLESHOOTING
+faq:
+  - q: "401 Unauthorized on endpoints."
+    a: "Include the shared token header (e.g., `-H 'X-Webhook-Token: <token>'`)."
+  - q: "RESTCONF returned HTML, not JSON."
+    a: "Use `Accept: application/yang-data+json` and verify the RESTCONF path."
+  - q: "NETCONF connection refused."
+    a: "Use port 830 and `hostkey_verify=False`; confirm sandbox credentials and reachability."
+  - q: "Netmiko errors on connect."
+    a: "Check host/IP/port 22, credentials, and device_type=`cisco_ios`."
+  - q: "EEM: Device lacks a direct curl/HTTP action."
+    a: "Use Guestshell to run curl, or document an IOS-XE-supported alternative in `eem_config.txt`."
+
+tips:
+  - title: "Deterministic logging"
+    symptom: "Autograder can’t find markers."
+    fix: "Log exact tokens; centralize logging in one helper."
+  - title: "Security first"
+    symptom: "Endpoints accessible without auth."
+    fix: "Validate token early; return 401 before doing any work."
+  - title: "Artifacts"
+    symptom: "Missing files under data/."
+    fix: "Create data/ upfront; use the specified filenames."
+
+# GRADING
 grading:
   total_points: 75
   rows:
-    - { step: "1", requirement: "Dev container ready; dependencies installed", points: 3 }
-    - { step: "2", requirement: "Reverse API concepts + EDNM documented", points: 3 }
-    - { step: "3", requirement: "Basic FastAPI server with /events endpoint", points: 8 }
-    - { step: "3", requirement: "Server logs requests and handles errors", points: 4 }
-    - { step: "4", requirement: "cURL sends JSON successfully", points: 5 }
-    - { step: "4", requirement: "Error cases tested and handled", points: 3 }
-    - { step: "5", requirement: "Dad Jokes integration via webhook", points: 7 }
-    - { step: "5", requirement: "Proper response handling and errors", points: 3 }
-    - { step: "6", requirement: "Deck of Cards integration; multiple events", points: 6 }
-    - { step: "6", requirement: "Deck state management", points: 4 }
-    - { step: "7", requirement: "Netmiko device interaction via webhook", points: 8 }
-    - { step: "7", requirement: "Device output captured and returned", points: 4 }
-    - { step: "8", requirement: "Security and validation implemented", points: 5 }
-    - { step: "8", requirement: "Config externalized; robust errors", points: 3 }
-    - { step: "9", requirement: "Comprehensive tests + docs", points: 4 }
-    - { step: "10", requirement: "End-to-end demo works", points: 5 }
-    - { step: "11", requirement: "Submission quality; required logs present", points: 3 }
+    - { step: "Env", requirement: "Dev container started; packages verified (`PKG_OK:*`)", points: 5 }
+    - { step: "Server", requirement: "FastAPI server runs; security validation implemented (`SERVER_STARTED`, `SECURITY_VALIDATION`)", points: 7 }
+    - { step: "Joke", requirement: "Joke endpoint returns JSON; artifacts saved (`JOKE_API_CALLED`, `RAW_SAVED=joke.json`)", points: 7 }
+    - { step: "Cards", requirement: "Deck create + draw; artifacts saved (`CARD_API_CALLED`, `RAW_SAVED=card.json`)", points: 7 }
+    - { step: "Netmiko", requirement: "Device command executed; output saved (`NETWORK_DEVICE_CALLED`, `CONNECT_OK: NETMIKO`)", points: 9 }
+    - { step: "RESTCONF", requirement: "RESTCONF call succeeds; JSON parsed; saved (`RESTCONF_CALLED`)", points: 9 }
+    - { step: "NETCONF", requirement: "NETCONF RPC succeeds; XML parsed; saved (`NETCONF_CALLED`)", points: 9 }
+    - { step: "EEM + Backup", requirement: "Applet config saved and running-config backed up (`EEM_CONFIG_SAVED`, `CONFIG_BACKUP_SAVED`)", points: 10 }
+    - { step: "Testing", requirement: "All endpoints validated; summary present (`TESTING_COMPLETE`)", points: 5 }
+    - { step: "Submission", requirement: "PR open; `LAB6_START`/`LAB6_END` present; log hygiene", points: 7 }
 
-tips:
-  - title: "Port in use"
-    symptom: "Uvicorn fails on 8000"
-    fix: "Kill the process or run `--port 8001`."
-  - title: "cURL refused"
-    symptom: "Connection refused to localhost"
-    fix: "Bind to 0.0.0.0 and ensure the server is running."
-  - title: "Missing logs"
-    symptom: "Autograder can’t find markers"
-    fix: "Use the provided `log(...)` helper and correct file paths."
-
+# AUTOGRADING
 autograder:
-  log_path: "logs/*.log"
+  log_path: "logs/lab6.log"
   required_markers:
     - "LAB6_START"
+    - "[STEP 2] Dev Container Started"
+    - "PKG_OK: fastapi"
+    - "PKG_OK: requests"
+    - "PKG_OK: netmiko"
+    - "PKG_OK: ncclient"
     - "SERVER_STARTED"
-    - "CURL_TEST"
-    - "WEBHOOK_RECEIVED"
-    - "JOKE_API_CALLED"
-    - "CARD_API_CALLED"
-    - "NETWORK_DEVICE_CALLED"
     - "SECURITY_VALIDATION"
+    - "WEBHOOK_RECEIVED=/joke"
+    - "JOKE_API_CALLED"
+    - "RAW_SAVED=joke.json"
+    - "WEBHOOK_RECEIVED=/card/draw"
+    - "CARD_API_CALLED"
+    - "RAW_SAVED=card.json"
+    - "WEBHOOK_RECEIVED=/device/command"
+    - "NETWORK_DEVICE_CALLED"
+    - "CONNECT_OK: NETMIKO"
+    - "WEBHOOK_RECEIVED=/restconf/system"
+    - "RESTCONF_CALLED"
+    - "RAW_SAVED=restconf_system.json"
+    - "WEBHOOK_RECEIVED=/netconf/system"
+    - "NETCONF_CALLED"
+    - "RAW_SAVED=netconf_system.xml"
+    - "EEM_CONFIG_SAVED"
+    - "CONFIG_BACKUP_SAVED"
     - "TESTING_COMPLETE"
-    - "LAB6_COMPLETE"
+    - "LAB6_END"
 
+# SUBMISSION CHECKLIST
 submission_checklist:
-  - "All four servers present under `src/` and start without tracebacks."
-  - "cURL scripts under `data/curl_tests/` exercise each event type."
-  - "Artifacts saved under `data/responses/`."
-  - "Logs contain all required markers for each phase."
-  - "README/INSTRUCTIONS rendered from template; PR passes Verify Docs."
+  - "Server runs; token validation enforced on all POST endpoints."
+  - "Five endpoints implemented and tested with cURL/Postman."
+  - "`data/eem_config.txt` and `data/device_running_config.txt` are present."
+  - "Artifacts saved under `data/` using specified filenames."
+  - "`logs/lab6.log` includes all required markers."
+  - "Pull request open to `main` before deadline."
 
-steps:
-  - title: "Clone the Repository & Setup"
-    goal: "Get workspace ready; confirm environment."
-    actions: |
-      Clone your Classroom repo, open in VS Code, and reopen in the dev container.
-      Verify Python and dependencies; create the data/logs folders if needed.
-    done_when: |
-      - Dev container shows READY
-      - Dependencies installed (fastapi, uvicorn, requests)
-      - `logs/DEVCONTAINER_STATUS.txt` updated
-    log_marker: "LAB6_START"
-
-  - title: "Understand Reverse APIs (Webhooks)"
-    goal: "Grasp polling vs push; relate to EDNM."
-    actions: |
-      Read the README section on webhooks, skim EDNM examples, and note webhook anatomy:
-      URL, headers, JSON payload.
-    done_when: "You can explain polling vs push and list webhook parts."
-    log_marker: "CONCEPT_REVIEW"
-
-  - title: "Build Basic FastAPI Webhook Server"
-    goal: "Receive JSON via POST and log it."
-    actions: |
-      Implement `src/basic_webhook_server.py` with POST `/events`, parse JSON, log to file,
-      return `{ "status": "ok" }`, and handle bad input cleanly.
-      Start with `uvicorn basic_webhook_server:app --host 0.0.0.0 --port 8000`.
-    done_when: "Server runs and accepts POSTs without crashing."
-    log_marker: "SERVER_STARTED"
-
-  - title: "Test Webhook with cURL"
-    goal: "Simulate events and validate handling."
-    actions: |
-      Create sample payloads under `data/webhook_payloads/` and send them with cURL to `/events`.
-      Include one malformed JSON test and record results to `logs/curl_tests.log`.
-    done_when: "Valid and invalid payloads both handled; logs updated."
-    log_marker: "CURL_TEST"
-
-  - title: "Joke API via Webhook"
-    goal: "Trigger external API based on event."
-    actions: |
-      Implement `src/joke_webhook_server.py` that responds to `{"event":"joke_request"}` by
-      calling Dad Jokes (`Accept: application/json`), returning the joke and logging the call.
-    done_when: "Jokes returned and logged."
-    log_marker: "JOKE_API_CALLED"
-
-  - title: "Deck of Cards via Webhook"
-    goal: "Support multiple event types and state."
-    actions: |
-      Implement `src/card_webhook_server.py` that handles `new_deck`, `draw`, `shuffle`,
-      persists `deck_id`, and logs actions and outcomes.
-    done_when: "Deck created/drawn/shuffled via webhook events."
-    log_marker: "CARD_API_CALLED"
-
-  - title: "Network Device via Webhook"
-    goal: "Trigger Netmiko interactions from events."
-    actions: |
-      Implement `src/network_webhook_server.py` that accepts device/action params,
-      connects to DevNet sandbox with Netmiko, runs show commands, returns structured data,
-      and logs connection/command results and errors.
-    done_when: "Device output returned; errors handled gracefully."
-    log_marker: "NETWORK_DEVICE_CALLED"
-
-  - title: "Security & Validation"
-    goal: "Harden the listener."
-    actions: |
-      Add payload validation, size limits, optional bearer token check, and input sanitization.
-      Externalize non-secret config to `webhook_config.json`.
-    done_when: "Bad inputs rejected; config read from file."
-    log_marker: "SECURITY_VALIDATION"
-
-  - title: "Comprehensive Testing & Docs"
-    goal: "Exercise all endpoints and document."
-    actions: |
-      Write cURL scripts for every event type, capture responses to `data/responses/`,
-      and document formats and expected outcomes.
-    done_when: "All endpoints tested; artifacts present."
-    log_marker: "TESTING_COMPLETE"
-
-  - title: "Demo & Submit"
-    goal: "Run the full workflow and submit."
-    actions: |
-      Run your most capable server, execute a scripted demo of all features,
-      ensure logs contain the required markers, commit/push, and open a PR.
-    done_when: "PR is open and Verify Docs is green."
-    log_marker: "LAB6_COMPLETE"
-
-license: "© 2025 Your Name — Classroom use."
-
+license: "© 2025 Sheldon Swanson — Classroom use."
