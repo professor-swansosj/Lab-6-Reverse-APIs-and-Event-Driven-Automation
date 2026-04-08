@@ -1,0 +1,210 @@
+name: GitHub Classroom Autograding
+
+on:
+  push:
+  workflow_dispatch:
+
+permissions:
+  checks: write
+  actions: read
+  contents: read
+
+jobs:
+  run-autograding-tests:
+    runs-on: ubuntu-latest
+    if: github.actor != 'github-classroom[bot]'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Environment Markers (5)
+        id: env_markers
+        uses: classroom-resources/autograding-command-grader@v1
+        with:
+          test-name: Environment Markers (5)
+          setup-command: ''
+          command: >-
+            bash -lc 'set -euo pipefail;
+            LOG_FILE="logs/lab.log";
+            [[ -f "$LOG_FILE" ]];
+            grep -Fq "[STEP 2] Dev Container Started" "$LOG_FILE";
+            grep -Fq "PKG_OK: fastapi" "$LOG_FILE";
+            grep -Fq "PKG_OK: requests" "$LOG_FILE";
+            grep -Fq "PKG_OK: netmiko" "$LOG_FILE";
+            grep -Fq "PKG_OK: ncclient" "$LOG_FILE"'
+          timeout: 10
+          max-score: 5
+
+      - name: Server and Security (7)
+        id: server_security
+        uses: classroom-resources/autograding-command-grader@v1
+        with:
+          test-name: Server and Security (7)
+          setup-command: ''
+          command: >-
+            bash -lc 'set -euo pipefail;
+            LOG_FILE="logs/lab.log";
+            [[ -f "$LOG_FILE" ]];
+            [[ -f "src/app.py" ]];
+            grep -Fq "SERVER_STARTED" "$LOG_FILE";
+            grep -Fq "SECURITY_VALIDATION" "$LOG_FILE";
+            grep -Fq "X-Webhook-Token" src/app.py;
+            POST_COUNT=$(grep -Eoc "@app\\.post\\(" src/app.py || true);
+            [[ "$POST_COUNT" -ge 5 ]]'
+          timeout: 10
+          max-score: 7
+
+      - name: Joke Endpoint Artifacts (7)
+        id: joke_endpoint
+        uses: classroom-resources/autograding-command-grader@v1
+        with:
+          test-name: Joke Endpoint Artifacts (7)
+          setup-command: ''
+          command: >-
+            bash -lc 'set -euo pipefail;
+            LOG_FILE="logs/lab.log";
+            [[ -f "$LOG_FILE" ]];
+            [[ -f "data/joke.json" ]];
+            [[ -f "data/joke.txt" ]];
+            grep -Fq "WEBHOOK_RECEIVED=/joke" "$LOG_FILE";
+            grep -Fq "JOKE_API_CALLED" "$LOG_FILE";
+            grep -Fq "RAW_SAVED=joke.json" "$LOG_FILE"'
+          timeout: 10
+          max-score: 7
+
+      - name: Card Endpoint Artifacts (7)
+        id: card_endpoint
+        uses: classroom-resources/autograding-command-grader@v1
+        with:
+          test-name: Card Endpoint Artifacts (7)
+          setup-command: ''
+          command: >-
+            bash -lc 'set -euo pipefail;
+            LOG_FILE="logs/lab.log";
+            [[ -f "$LOG_FILE" ]];
+            [[ -f "data/card.json" ]];
+            [[ -f "data/card.txt" ]];
+            grep -Fq "WEBHOOK_RECEIVED=/card/draw" "$LOG_FILE";
+            grep -Fq "CARD_API_CALLED" "$LOG_FILE";
+            grep -Fq "RAW_SAVED=card.json" "$LOG_FILE"'
+          timeout: 10
+          max-score: 7
+
+      - name: Netmiko Command (9)
+        id: netmiko_command
+        uses: classroom-resources/autograding-command-grader@v1
+        with:
+          test-name: Netmiko Command (9)
+          setup-command: ''
+          command: >-
+            bash -lc 'set -euo pipefail;
+            LOG_FILE="logs/lab.log";
+            [[ -f "$LOG_FILE" ]];
+            [[ -s "data/device_cmd.txt" ]];
+            grep -Fq "WEBHOOK_RECEIVED=/device/command" "$LOG_FILE";
+            grep -Fq "NETWORK_DEVICE_CALLED" "$LOG_FILE";
+            grep -Fq "CONNECT_OK: NETMIKO" "$LOG_FILE"'
+          timeout: 10
+          max-score: 9
+
+      - name: RESTCONF Endpoint (9)
+        id: restconf_endpoint
+        uses: classroom-resources/autograding-command-grader@v1
+        with:
+          test-name: RESTCONF Endpoint (9)
+          setup-command: ''
+          command: >-
+            bash -lc 'set -euo pipefail;
+            LOG_FILE="logs/lab.log";
+            [[ -f "$LOG_FILE" ]];
+            [[ -f "data/restconf_system.json" || -n "$(ls -1 data/restconf_*.json 2>/dev/null | head -n1)" ]];
+            grep -Fq "WEBHOOK_RECEIVED=/restconf/system" "$LOG_FILE";
+            grep -Fq "RESTCONF_CALLED" "$LOG_FILE";
+            grep -Fq "RAW_SAVED=restconf_system.json" "$LOG_FILE"'
+          timeout: 10
+          max-score: 9
+
+      - name: NETCONF Endpoint (9)
+        id: netconf_endpoint
+        uses: classroom-resources/autograding-command-grader@v1
+        with:
+          test-name: NETCONF Endpoint (9)
+          setup-command: ''
+          command: >-
+            bash -lc 'set -euo pipefail;
+            LOG_FILE="logs/lab.log";
+            [[ -f "$LOG_FILE" ]];
+            [[ -f "data/netconf_system.xml" ]];
+            grep -Fq "WEBHOOK_RECEIVED=/netconf/system" "$LOG_FILE";
+            grep -Fq "NETCONF_CALLED" "$LOG_FILE";
+            grep -Fq "RAW_SAVED=netconf_system.xml" "$LOG_FILE"'
+          timeout: 10
+          max-score: 9
+
+      - name: EEM and Running Config Backup (10)
+        id: eem_backup
+        uses: classroom-resources/autograding-command-grader@v1
+        with:
+          test-name: EEM and Running Config Backup (10)
+          setup-command: ''
+          command: >-
+            bash -lc 'set -euo pipefail;
+            LOG_FILE="logs/lab.log";
+            [[ -f "$LOG_FILE" ]];
+            [[ -s "data/eem_config.txt" ]];
+            [[ -s "data/device_running_config.txt" ]];
+            grep -Fq "EEM_CONFIG_SAVED" "$LOG_FILE";
+            grep -Fq "CONFIG_BACKUP_SAVED" "$LOG_FILE"'
+          timeout: 10
+          max-score: 10
+
+      - name: Summary and Testing Marker (5)
+        id: summary_testing
+        uses: classroom-resources/autograding-command-grader@v1
+        with:
+          test-name: Summary and Testing Marker (5)
+          setup-command: ''
+          command: >-
+            bash -lc 'set -euo pipefail;
+            LOG_FILE="logs/lab.log";
+            [[ -f "$LOG_FILE" ]];
+            [[ -s "data/summary.txt" ]];
+            grep -Fiq "joke" data/summary.txt;
+            grep -Fiq "card" data/summary.txt;
+            grep -Fiq "device" data/summary.txt;
+            grep -Fiq "restconf" data/summary.txt;
+            grep -Fiq "netconf" data/summary.txt;
+            grep -Fq "TESTING_COMPLETE" "$LOG_FILE"'
+          timeout: 10
+          max-score: 5
+
+      - name: Submission Markers (7)
+        id: submission_markers
+        uses: classroom-resources/autograding-command-grader@v1
+        with:
+          test-name: Submission Markers (7)
+          setup-command: ''
+          command: >-
+            bash -lc 'set -euo pipefail;
+            LOG_FILE="logs/lab.log";
+            [[ -f "$LOG_FILE" ]];
+            grep -Fq "LAB6_START" "$LOG_FILE";
+            grep -Fq "LAB6_END" "$LOG_FILE"'
+          timeout: 10
+          max-score: 7
+
+      - name: Autograding Reporter
+        uses: classroom-resources/autograding-grading-reporter@v1
+        env:
+          ENV_MARKERS_RESULTS: "${{ steps.env_markers.outputs.result }}"
+          SERVER_SECURITY_RESULTS: "${{ steps.server_security.outputs.result }}"
+          JOKE_ENDPOINT_RESULTS: "${{ steps.joke_endpoint.outputs.result }}"
+          CARD_ENDPOINT_RESULTS: "${{ steps.card_endpoint.outputs.result }}"
+          NETMIKO_COMMAND_RESULTS: "${{ steps.netmiko_command.outputs.result }}"
+          RESTCONF_ENDPOINT_RESULTS: "${{ steps.restconf_endpoint.outputs.result }}"
+          NETCONF_ENDPOINT_RESULTS: "${{ steps.netconf_endpoint.outputs.result }}"
+          EEM_BACKUP_RESULTS: "${{ steps.eem_backup.outputs.result }}"
+          SUMMARY_TESTING_RESULTS: "${{ steps.summary_testing.outputs.result }}"
+          SUBMISSION_MARKERS_RESULTS: "${{ steps.submission_markers.outputs.result }}"
+        with:
+          runners: env_markers,server_security,joke_endpoint,card_endpoint,netmiko_command,restconf_endpoint,netconf_endpoint,eem_backup,summary_testing,submission_markers
