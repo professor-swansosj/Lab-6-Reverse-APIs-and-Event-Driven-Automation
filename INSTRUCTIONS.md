@@ -17,6 +17,20 @@
 - cURL or Postman to send webhook events.
 - Access to Cisco DevNet Always-On sandbox and credentials.
 
+## Table of Contents
+
+1. [Step 1 — Clone the Repository](#step-1--clone-the-repository)
+2. [Step 2 — Environment & Packages](#step-2--environment--packages)
+3. [Step 3 — FastAPI App & Security](#step-3--fastapi-app--security)
+4. [Step 4 — Endpoint 1 — /joke (Dad Jokes API)](#step-4--endpoint-1--joke-dad-jokes-api)
+5. [Step 5 — Endpoint 2 — /card/draw (Deck of Cards)](#step-5--endpoint-2--carddraw-deck-of-cards)
+6. [Step 6 — Endpoint 3 — /device/command (Netmiko)](#step-6--endpoint-3--devicecommand-netmiko)
+7. [Step 7 — Endpoint 4 — /restconf/system (RESTCONF)](#step-7--endpoint-4--restconfsystem-restconf)
+8. [Step 8 — Endpoint 5 — /netconf/system (NETCONF)](#step-8--endpoint-5--netconfsystem-netconf)
+9. [Step 9 — Cisco EEM Applet — Webhook on Interface-Down](#step-9--cisco-eem-applet--webhook-on-interface-down)
+10. [Step 10 — Summary File & Test Run](#step-10--summary-file--test-run)
+11. [Step 11 — Finalize & Submit](#step-11--finalize--submit)
+
 ## Overview
 Build a FastAPI webhook service with five POST endpoints: Dad Jokes, Deck of Cards, Netmiko command, RESTCONF request, and NETCONF RPC. Protect endpoints with a shared token, save artifacts under data/, and log deterministic markers for autograding. Then configure a Cisco EEM applet on the sandbox device that triggers a webhook POST when an interface goes down. Back up the device configuration and include it in the repository.
 
@@ -25,7 +39,15 @@ Build a FastAPI webhook service with five POST endpoints: Dad Jokes, Deck of Car
 
 
 ## Resources
-- [FastAPI](https://fastapi.tiangolo.com/)- [Uvicorn](https://www.uvicorn.org/)- [Requests (Python)](https://requests.readthedocs.io/en/latest/)- [Netmiko](https://ktbyers.github.io/netmiko/)- [ncclient](https://ncclient.readthedocs.io/)- [xmltodict](https://github.com/martinblech/xmltodict)- [Cisco DevNet Sandboxes](https://developer.cisco.com/site/sandbox/)- [Cisco EEM (Embedded Event Manager) Overview](https://www.cisco.com/c/en/us/td/docs/ios-xml/ios/eem/command/eem-cr-book/eem-cr-a1.html)
+
+- [FastAPI](https://fastapi.tiangolo.com/)
+- [Uvicorn](https://www.uvicorn.org/)
+- [Requests (Python)](https://requests.readthedocs.io/en/latest/)
+- [Netmiko](https://ktbyers.github.io/netmiko/)
+- [ncclient](https://ncclient.readthedocs.io/)
+- [xmltodict](https://github.com/martinblech/xmltodict)
+- [Cisco DevNet Sandboxes](https://developer.cisco.com/site/sandbox/)
+- [Cisco EEM (Embedded Event Manager) Overview](https://www.cisco.com/c/en/us/td/docs/ios-xml/ios/eem/command/eem-cr-book/eem-cr-a1.html)
 ## Deliverables
 - `src/app.py` (FastAPI app) with ≥5 paths: `/joke`, `/card/draw`, `/device/command`, `/restconf/system`, `/netconf/system` (POST + token).
 - `data/` artifacts: `joke.json/txt`, `card.json/txt`, `device_cmd.txt`, `restconf_*.json`, `netconf_*.xml/txt`, and `summary.txt`.

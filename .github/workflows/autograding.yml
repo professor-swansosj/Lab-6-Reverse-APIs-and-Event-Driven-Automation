@@ -12,6 +12,7 @@ permissions:
 jobs:
   run-autograding-tests:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     if: github.actor != 'github-classroom[bot]'
     steps:
       - name: Checkout code
@@ -19,13 +20,15 @@ jobs:
 
       - name: Environment Markers (5)
         id: env_markers
+        if: always()
+        continue-on-error: true
         uses: classroom-resources/autograding-command-grader@v1
         with:
           test-name: Environment Markers (5)
           setup-command: ''
           command: >-
             bash -lc 'set -euo pipefail;
-            LOG_FILE="logs/lab.log";
+            LOG_FILE="logs/lab6.log";
             [[ -f "$LOG_FILE" ]];
             grep -Fq "[STEP 2] Dev Container Started" "$LOG_FILE";
             grep -Fq "PKG_OK: fastapi" "$LOG_FILE";
@@ -37,32 +40,38 @@ jobs:
 
       - name: Server and Security (7)
         id: server_security
+        if: always()
+        continue-on-error: true
         uses: classroom-resources/autograding-command-grader@v1
         with:
           test-name: Server and Security (7)
           setup-command: ''
           command: >-
             bash -lc 'set -euo pipefail;
-            LOG_FILE="logs/lab.log";
+            LOG_FILE="logs/lab6.log";
             [[ -f "$LOG_FILE" ]];
             [[ -f "src/app.py" ]];
             grep -Fq "SERVER_STARTED" "$LOG_FILE";
             grep -Fq "SECURITY_VALIDATION" "$LOG_FILE";
-            grep -Fq "X-Webhook-Token" src/app.py;
-            POST_COUNT=$(grep -Eoc "@app\\.post\\(" src/app.py || true);
-            [[ "$POST_COUNT" -ge 5 ]]'
+            grep -Fiq "X-Webhook-Token" src/app.py;
+            APP_POST=$(grep -Eoc "@app\\.post\\(" src/app.py || true);
+            ROUTER_POST=$(grep -Eoc "@router\\.post\\(" src/app.py || true);
+            TOTAL_POST=$((APP_POST + ROUTER_POST));
+            [[ "$TOTAL_POST" -ge 5 ]]'
           timeout: 10
           max-score: 7
 
       - name: Joke Endpoint Artifacts (7)
         id: joke_endpoint
+        if: always()
+        continue-on-error: true
         uses: classroom-resources/autograding-command-grader@v1
         with:
           test-name: Joke Endpoint Artifacts (7)
           setup-command: ''
           command: >-
             bash -lc 'set -euo pipefail;
-            LOG_FILE="logs/lab.log";
+            LOG_FILE="logs/lab6.log";
             [[ -f "$LOG_FILE" ]];
             [[ -f "data/joke.json" ]];
             [[ -f "data/joke.txt" ]];
@@ -74,13 +83,15 @@ jobs:
 
       - name: Card Endpoint Artifacts (7)
         id: card_endpoint
+        if: always()
+        continue-on-error: true
         uses: classroom-resources/autograding-command-grader@v1
         with:
           test-name: Card Endpoint Artifacts (7)
           setup-command: ''
           command: >-
             bash -lc 'set -euo pipefail;
-            LOG_FILE="logs/lab.log";
+            LOG_FILE="logs/lab6.log";
             [[ -f "$LOG_FILE" ]];
             [[ -f "data/card.json" ]];
             [[ -f "data/card.txt" ]];
@@ -92,13 +103,15 @@ jobs:
 
       - name: Netmiko Command (9)
         id: netmiko_command
+        if: always()
+        continue-on-error: true
         uses: classroom-resources/autograding-command-grader@v1
         with:
           test-name: Netmiko Command (9)
           setup-command: ''
           command: >-
             bash -lc 'set -euo pipefail;
-            LOG_FILE="logs/lab.log";
+            LOG_FILE="logs/lab6.log";
             [[ -f "$LOG_FILE" ]];
             [[ -s "data/device_cmd.txt" ]];
             grep -Fq "WEBHOOK_RECEIVED=/device/command" "$LOG_FILE";
@@ -109,13 +122,15 @@ jobs:
 
       - name: RESTCONF Endpoint (9)
         id: restconf_endpoint
+        if: always()
+        continue-on-error: true
         uses: classroom-resources/autograding-command-grader@v1
         with:
           test-name: RESTCONF Endpoint (9)
           setup-command: ''
           command: >-
             bash -lc 'set -euo pipefail;
-            LOG_FILE="logs/lab.log";
+            LOG_FILE="logs/lab6.log";
             [[ -f "$LOG_FILE" ]];
             [[ -f "data/restconf_system.json" || -n "$(ls -1 data/restconf_*.json 2>/dev/null | head -n1)" ]];
             grep -Fq "WEBHOOK_RECEIVED=/restconf/system" "$LOG_FILE";
@@ -126,13 +141,15 @@ jobs:
 
       - name: NETCONF Endpoint (9)
         id: netconf_endpoint
+        if: always()
+        continue-on-error: true
         uses: classroom-resources/autograding-command-grader@v1
         with:
           test-name: NETCONF Endpoint (9)
           setup-command: ''
           command: >-
             bash -lc 'set -euo pipefail;
-            LOG_FILE="logs/lab.log";
+            LOG_FILE="logs/lab6.log";
             [[ -f "$LOG_FILE" ]];
             [[ -f "data/netconf_system.xml" ]];
             grep -Fq "WEBHOOK_RECEIVED=/netconf/system" "$LOG_FILE";
@@ -143,13 +160,15 @@ jobs:
 
       - name: EEM and Running Config Backup (10)
         id: eem_backup
+        if: always()
+        continue-on-error: true
         uses: classroom-resources/autograding-command-grader@v1
         with:
           test-name: EEM and Running Config Backup (10)
           setup-command: ''
           command: >-
             bash -lc 'set -euo pipefail;
-            LOG_FILE="logs/lab.log";
+            LOG_FILE="logs/lab6.log";
             [[ -f "$LOG_FILE" ]];
             [[ -s "data/eem_config.txt" ]];
             [[ -s "data/device_running_config.txt" ]];
@@ -160,13 +179,15 @@ jobs:
 
       - name: Summary and Testing Marker (5)
         id: summary_testing
+        if: always()
+        continue-on-error: true
         uses: classroom-resources/autograding-command-grader@v1
         with:
           test-name: Summary and Testing Marker (5)
           setup-command: ''
           command: >-
             bash -lc 'set -euo pipefail;
-            LOG_FILE="logs/lab.log";
+            LOG_FILE="logs/lab6.log";
             [[ -f "$LOG_FILE" ]];
             [[ -s "data/summary.txt" ]];
             grep -Fiq "joke" data/summary.txt;
@@ -180,20 +201,23 @@ jobs:
 
       - name: Submission Markers (7)
         id: submission_markers
+        if: always()
+        continue-on-error: true
         uses: classroom-resources/autograding-command-grader@v1
         with:
           test-name: Submission Markers (7)
           setup-command: ''
           command: >-
             bash -lc 'set -euo pipefail;
-            LOG_FILE="logs/lab.log";
+            LOG_FILE="logs/lab6.log";
             [[ -f "$LOG_FILE" ]];
-            grep -Fq "LAB6_START" "$LOG_FILE";
-            grep -Fq "LAB6_END" "$LOG_FILE"'
+            grep -Eq "LAB6[-_]START" "$LOG_FILE";
+            grep -Eq "LAB6[-_]END" "$LOG_FILE"'
           timeout: 10
           max-score: 7
 
       - name: Autograding Reporter
+        if: always()
         uses: classroom-resources/autograding-grading-reporter@v1
         env:
           ENV_MARKERS_RESULTS: "${{ steps.env_markers.outputs.result }}"
