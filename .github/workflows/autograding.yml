@@ -231,4 +231,14 @@ jobs:
           SUMMARY_TESTING_RESULTS: "${{ steps.summary_testing.outputs.result }}"
           SUBMISSION_MARKERS_RESULTS: "${{ steps.submission_markers.outputs.result }}"
         with:
-          runners: env_markers,server_security,joke_endpoint,card_endpoint,netmiko_command,restconf_endpoint,netconf_endpoint,eem_backup,summary_testing,submission_markers
+          runners: |
+            env_markers
+            server_security
+            joke_endpoint
+            card_endpoint
+            netmiko_command
+            restconf_endpoint
+            netconf_endpoint
+            eem_backup
+            summary_testing
+            submission_markers
